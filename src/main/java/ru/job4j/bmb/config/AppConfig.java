@@ -5,26 +5,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AppConfig {
-    @Value("${app.name}")
-    private String appName;
+    @Value("${telegram.bot.name}")
+    private String telegramBotName;
 
-    @Value("${app.token}")
-    private String appToken;
-
-    @Value("${app.version}")
-    private String appVersion;
-
-    @Value("${app.url}")
-    private String appUrl;
-
-    @Value("${app.timeout}")
-    private int timeout;
+    @Value("${telegram.bot.token}")
+    private String telegramBotToken;
 
     public void printConfig() {
-        System.out.println("App Name: " + appName);
-        System.out.println("App Token: " + appToken);
-        System.out.println("App Version: " + appVersion);
-        System.out.println("App URL: " + appUrl);
-        System.out.println("Timeout: " + timeout);
+        System.out.println("Telegram Bot name: " + telegramBotName);
+        System.out.println("Telegram Bot token: " + telegramBotToken);
     }
 }
