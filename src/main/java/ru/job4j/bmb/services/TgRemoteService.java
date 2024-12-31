@@ -8,6 +8,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.job4j.bmb.model.User;
+import ru.job4j.bmb.repositories.UserRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +20,7 @@ import java.util.Map;
 public class TgRemoteService extends TelegramLongPollingBot {
     private final String botName;
     private final String botToken;
+    private final UserRepository userRepository;
     private static final Map<String, String> MOOD_RESP = new HashMap<>();
 
     static {
@@ -29,9 +32,11 @@ public class TgRemoteService extends TelegramLongPollingBot {
     }
 
     public TgRemoteService(@Value("${telegram.bot.name}") String botName,
-                           @Value("${telegram.bot.token}") String botToken) {
+                           @Value("${telegram.bot.token}") String botToken,
+                           UserRepository userRepository) {
         this.botName = botName;
         this.botToken = botToken;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -44,7 +49,7 @@ public class TgRemoteService extends TelegramLongPollingBot {
         return botName;
     }
 
-    private void send(SendMessage message) {
+    public void send(SendMessage message) {
         try {
             execute(message);
         } catch (TelegramApiException e) {
@@ -54,14 +59,16 @@ public class TgRemoteService extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasCallbackQuery()) {
-            var data = update.getCallbackQuery().getData();
-            var chatId = update.getCallbackQuery().getMessage().getChatId();
-            send(new SendMessage(String.valueOf(chatId), MOOD_RESP.get(data)));
-        }
         if (update.hasMessage() && update.getMessage().hasText()) {
-            long chatId = update.getMessage().getChatId();
-            send(sendButtons(chatId));
+            var message = update.getMessage();
+            if ("/start".equals(message.getText())) {
+                long chatId = message.getChatId();
+                var user = new User();
+                user.setClientId(message.getFrom().getId());
+                user.setChatId(chatId);
+                userRepository.add(user);
+                send(sendButtons(chatId));
+            }
         }
     }
 
@@ -76,19 +83,15 @@ public class TgRemoteService extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText("Как настроение сегодня?");
-
         var inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-
         keyboard.add(List.of(createBtn("Потерял носок \uD83D\uDE22", "lost_sock")));
         keyboard.add(List.of(createBtn("Как огурец на полке \uD83D\uDE10", "cucumber")));
         keyboard.add(List.of(createBtn("Готов к танцам \uD83D\uDE04", "dance_ready")));
         keyboard.add(List.of(createBtn("Где мой кофе?! \uD83D\uDE23", "need_coffee")));
         keyboard.add(List.of(createBtn("Слипаются глаза \uD83D\uDE29", "sleepy")));
-
         inlineKeyboardMarkup.setKeyboard(keyboard);
         message.setReplyMarkup(inlineKeyboardMarkup);
-
         return message;
     }
 }
