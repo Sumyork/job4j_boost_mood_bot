@@ -1,0 +1,14 @@
+package ru.job4j.bmb.repositories;
+
+import org.springframework.data.repository.CrudRepository;
+import ru.job4j.bmb.model.Award;
+
+import java.util.List;
+
+public interface AwardRepository extends CrudRepository<Award, Long> {
+    List<Award> findAll();
+
+    Award findByAwardId(Long awardId);
+
+    void add(Award award);
+}
